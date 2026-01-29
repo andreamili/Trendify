@@ -46,8 +46,9 @@ class HomeScreen extends StatelessWidget {
 
                 //blur slike
                 Container(
-                  color: Colors.black.withOpacity(0.4), 
+                  color: Color.fromRGBO(0, 0, 0, 0.4), 
                 ),
+
 
                 //Obavestenje ako nema dodatih slika
                 Padding(
