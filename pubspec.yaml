@@ -33,7 +33,7 @@ flutter:
   uses-material-design: true
   assets:
     - lib/assets/images/trendify.png
-    - lib/assets/images/homebackground.jpeg
+    - lib/assets/images/homebackground.png
     - lib/assets/images/loginbackground.jpeg
     - lib/assets/images/registerbackground.jpeg
 
