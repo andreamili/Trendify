@@ -18,12 +18,12 @@ class RegisterScreen extends StatelessWidget {
             ),
           ),
 
-          // Žuto-sivi overlay / blur sloj
+          
           Container(
-            color: const Color.fromRGBO(0, 0, 0, 0.35), // tamno-sivi providni sloj
+            color: const Color.fromRGBO(0, 0, 0, 0.35), 
           ),
 
-          // Centrirani box za registraciju
+          
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -43,7 +43,7 @@ class RegisterScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Naslov
+                    
                     const Text(
                       'REGISTER',
                       style: TextStyle(
@@ -56,7 +56,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // Full Name polje
+                    
                     TextField(
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
@@ -74,7 +74,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Email polje
+                    
                     TextField(
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
@@ -92,7 +92,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password polje
+                    
                     TextField(
                       obscureText: true,
                       style: const TextStyle(color: Colors.black),
@@ -111,7 +111,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Confirm Password polje
+                    
                     TextField(
                       obscureText: true,
                       style: const TextStyle(color: Colors.black),
@@ -130,12 +130,12 @@ class RegisterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // Register dugme
+                    
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Za sada vodi na HomeScreen
+                          
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -158,7 +158,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Login link
+                    
                     TextButton(
                       onPressed: () {
                         Navigator.push(

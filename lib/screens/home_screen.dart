@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'myprofile_screen.dart';
+import 'admin_panel.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   // Placeholder lista slika (kasnije ide backend)
   final List<String> images = const [];
+
+  final bool isLoggedIn = true;  
+  final bool isAdmin = true;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +34,55 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+
+          if (isLoggedIn) 
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MyProfileScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.yellow[700],
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('MyProfile'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (isAdmin)
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AdminContentScreen()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          foregroundColor: Colors.yellow[700],
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Admin Panel'),
+                      ),
+                    ),
+                ],
+              ),
+            ),
 
           // BODY
           Expanded(

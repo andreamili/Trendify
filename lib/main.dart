@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/myprofile_screen.dart';
+import 'screens/welcome_screen.dart';
 
 void main() {
   runApp(const TrendifyApp());
@@ -18,7 +18,7 @@ class TrendifyApp extends StatelessWidget {
         brightness: Brightness.dark,
         primaryColor: Colors.yellow[700],
       ),
-      home: const MyProfileScreen(), //testiranje myprofile da vidim kako izgleda
+      home: const WelcomeScreen(), 
     );
   }
 }

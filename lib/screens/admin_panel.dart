@@ -9,13 +9,13 @@ class AdminContentScreen extends StatefulWidget {
 }
 
 class _AdminContentScreenState extends State<AdminContentScreen> {
-  
   List<Map<String, dynamic>> images = [
+   
   ];
 
   String searchQuery = '';
 
-  //Datum
+  // Format datuma
   String formatDate(DateTime date) {
     const monthNames = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -26,7 +26,7 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    //search (ime ili email)
+    //search
     List<Map<String, dynamic>> filteredImages = images.where((img) {
       return searchQuery.isEmpty ||
           img['userName'].toLowerCase().contains(searchQuery.toLowerCase()) ||
@@ -45,9 +45,7 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
           ),
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-            child: Container(
-              color: const Color.fromRGBO(0, 0, 0, 0.3),
-            ),
+            child: Container(color: const Color.fromRGBO(0, 0, 0, 0.3)),
           ),
 
           SafeArea(
@@ -65,19 +63,18 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                     ),
                     child: const Text(
                       'Admin Panel',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.yellow,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
-
                   const SizedBox(height: 16),
 
-                  // Search bar za korisnike
+                  // Search bar
                   TextField(
                     onChanged: (value) => setState(() => searchQuery = value),
                     decoration: InputDecoration(
@@ -93,7 +90,6 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                     ),
                     style: const TextStyle(color: Colors.white),
                   ),
-
                   const SizedBox(height: 16),
 
                   // Lista slika
@@ -108,6 +104,7 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                               ),
                               child: const Text(
                                 'No images uploaded!',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.yellow,
                                   fontWeight: FontWeight.bold,
@@ -129,12 +126,13 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    //slika i žuti ram
+                                    // Slika sa žutim ramom
                                     Container(
                                       width: 80,
                                       height: 80,
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.yellow[700]!, width: 3),
+                                        border: Border.all(
+                                            color: Colors.yellow[700]!, width: 3),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: ClipRRect(
@@ -145,10 +143,9 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                                         ),
                                       ),
                                     ),
-
                                     const SizedBox(width: 12),
 
-                                    //korisnik i datum
+                                    // Korisnik i datum
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,31 +160,51 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                                           ),
                                           Text(
                                             img['userEmail'],
-                                            style: const TextStyle(color: Colors.grey),
+                                            style:
+                                                const TextStyle(color: Colors.grey),
                                           ),
                                           Text(
                                             formatDate(img['date']),
-                                            style: const TextStyle(color: Colors.grey),
+                                            style:
+                                                const TextStyle(color: Colors.grey),
                                           ),
                                         ],
                                       ),
                                     ),
 
-                                    // delete dugme
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          images.remove(img);
-                                        });
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red[700],
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                    // Dugmad Edit i Delete
+                                    Column(
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue[700],
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: const Text('Edit'),
                                         ),
-                                      ),
-                                      child: const Text('Delete'),
+                                        const SizedBox(height: 4),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              images.remove(img);
+                                            });
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red[700],
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
