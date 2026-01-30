@@ -7,6 +7,20 @@ class RegisterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    //kontroleri za proveru unosa
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController confirmController = TextEditingController();
+
+    void navigateHome() {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    }
+
     return Scaffold(
       body: Stack(
         children: [
@@ -56,8 +70,9 @@ class RegisterScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    
+                    //name
                     TextField(
+                      controller: nameController,
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Full Name',
@@ -76,6 +91,7 @@ class RegisterScreen extends StatelessWidget {
 
                     
                     TextField(
+                      controller: emailController,
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Email',
@@ -94,6 +110,7 @@ class RegisterScreen extends StatelessWidget {
 
                     
                     TextField(
+                      controller: passwordController,
                       obscureText: true,
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
@@ -113,6 +130,7 @@ class RegisterScreen extends StatelessWidget {
 
                     
                     TextField(
+                      controller: confirmController,
                       obscureText: true,
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
@@ -135,12 +153,60 @@ class RegisterScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
+
+                          String name = nameController.text.trim();
+                          String email = emailController.text.trim();
+                          String password = passwordController.text;
+                          String confirm = confirmController.text;
+
+                          // validacija
+                          if (name.isEmpty ||
+                              email.isEmpty ||
+                              password.isEmpty ||
+                              confirm.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please fill in all fields'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // email validacija
+                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Invalid email address'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // password match
+                          if (password != confirm) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Passwords do not match'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
                           
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HomeScreen()),
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Registration successful!'),
+                              backgroundColor: Colors.green,
+                            ),
                           );
+
+                          
+                          Future.delayed(const Duration(seconds: 1), navigateHome);
                         },
+
+                        //ako je sve ok idi na home screen
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           foregroundColor: Colors.yellow[700],
