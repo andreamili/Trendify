@@ -39,6 +39,7 @@ flutter:
     - lib/assets/images/registerbackground.jpeg
     - lib/assets/images/myprofile.jpeg
     - lib/assets/images/admin.jpeg
+    - lib/assets/images/add.jpeg
 
 
 

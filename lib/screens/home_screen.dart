@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'myprofile_screen.dart';
 import 'admin_panel.dart';
+import 'add_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,6 +15,21 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
+      floatingActionButton: isLoggedIn
+          ? FloatingActionButton(
+              backgroundColor: Colors.yellow[700],
+              foregroundColor: Colors.black,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddScreen()),
+                );
+              },
+              child: const Icon(Icons.add, size: 30),
+            )
+          : null,
+
       body: Column(
         children: [
           // HEADER
