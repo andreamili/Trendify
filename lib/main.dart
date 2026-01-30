@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_screen.dart'; 
+import 'screens/myprofile_screen.dart';
 
 void main() {
   runApp(const TrendifyApp());
@@ -8,17 +8,17 @@ void main() {
 class TrendifyApp extends StatelessWidget {
   const TrendifyApp({super.key});
 
+ 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Trendify',
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false, 
+      title: 'MyProfile Test',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color.fromARGB(255, 29, 29, 29),
-        useMaterial3: true,
+        primaryColor: Colors.yellow[700],
       ),
-      home: const WelcomeScreen(), 
+      home: const MyProfileScreen(), //testiranje myprofile da vidim kako izgleda
     );
   }
 }

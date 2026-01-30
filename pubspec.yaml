@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  intl: ^0.18.1
     
 
   # iOS style icons
@@ -36,6 +37,8 @@ flutter:
     - lib/assets/images/homebackground.png
     - lib/assets/images/loginbackground.jpeg
     - lib/assets/images/registerbackground.jpeg
+    - lib/assets/images/myprofile.jpeg
+    - lib/assets/images/admin.jpeg
 
 
 
