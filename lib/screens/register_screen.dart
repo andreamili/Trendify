@@ -18,9 +18,9 @@ class RegisterScreen extends StatelessWidget {
             ),
           ),
 
-          // Tamni pink overlay / blur
+          // Žuto-sivi overlay / blur sloj
           Container(
-            color: const Color.fromRGBO(200, 0, 100, 0.4), // tamno-roze providni sloj
+            color: const Color.fromRGBO(0, 0, 0, 0.35), // tamno-sivi providni sloj
           ),
 
           // Centrirani box za registraciju
@@ -30,11 +30,11 @@ class RegisterScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 decoration: BoxDecoration(
-                  color: Colors.pink[900]?.withValues(alpha: 0.5),
+                  color: Colors.yellow[700]?.withAlpha(200),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: Colors.black.withAlpha(100),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -47,7 +47,7 @@ class RegisterScreen extends StatelessWidget {
                     const Text(
                       'REGISTER',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
@@ -58,36 +58,36 @@ class RegisterScreen extends StatelessWidget {
 
                     // Full Name polje
                     TextField(
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Full Name',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
+                        labelStyle: TextStyle(color: Colors.grey[800]),
                         filled: true,
-                        fillColor: Colors.pink[700],
+                        fillColor: Colors.grey[300],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16, horizontal: 16),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     // Email polje
                     TextField(
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
+                        labelStyle: TextStyle(color: Colors.grey[800]),
                         filled: true,
-                        fillColor: Colors.pink[700],
+                        fillColor: Colors.grey[300],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16, horizontal: 16),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -95,18 +95,18 @@ class RegisterScreen extends StatelessWidget {
                     // Password polje
                     TextField(
                       obscureText: true,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
+                        labelStyle: TextStyle(color: Colors.grey[800]),
                         filled: true,
-                        fillColor: Colors.pink[700],
+                        fillColor: Colors.grey[300],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16, horizontal: 16),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -114,18 +114,18 @@ class RegisterScreen extends StatelessWidget {
                     // Confirm Password polje
                     TextField(
                       obscureText: true,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
+                        labelStyle: TextStyle(color: Colors.grey[800]),
                         filled: true,
-                        fillColor: Colors.pink[700],
+                        fillColor: Colors.grey[300],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16, horizontal: 16),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -138,13 +138,12 @@ class RegisterScreen extends StatelessWidget {
                           // Za sada vodi na HomeScreen
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(
-                                builder: (_) => const HomeScreen()),
+                            MaterialPageRoute(builder: (_) => const HomeScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.pink[400],
-                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.black,
+                          foregroundColor: Colors.yellow[700],
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -164,14 +163,13 @@ class RegisterScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const LoginScreen()),
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
                         );
                       },
                       child: const Text(
                         'Already have an account? Login',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           decoration: TextDecoration.underline,
                         ),
                       ),
