@@ -7,6 +7,11 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    //kontroleri za proveru polja
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
       body: Stack(
         children: [
@@ -67,6 +72,7 @@ class LoginScreen extends StatelessWidget {
 
                     // Email polje
                     TextField(
+                      controller: emailController,
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Email',
@@ -85,6 +91,7 @@ class LoginScreen extends StatelessWidget {
 
                     // Password polje
                     TextField(
+                      controller: passwordController,
                       obscureText: true,
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
@@ -107,6 +114,40 @@ class LoginScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
+                          String email = emailController.text.trim();
+                          String password = passwordController.text;
+
+                          // validacija praznih polja
+                          if (email.isEmpty || password.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please fill in all fields'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // validacija email formata
+                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Invalid email address'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // uspešan login
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Login successful!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+
+                          //ne moze korisnik da se vrati na login kad se uloguje
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
