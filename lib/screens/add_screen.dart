@@ -10,6 +10,8 @@ class AddScreen extends StatefulWidget {
 class _AddScreenState extends State<AddScreen> {
   final TextEditingController descriptionController = TextEditingController();
 
+String? selectedImagePath;
+
   @override
   void dispose() {
     descriptionController.dispose();
@@ -59,14 +61,13 @@ class _AddScreenState extends State<AddScreen> {
 
                   const SizedBox(height: 30),
 
-                  // Preview slike
-                  Container(
-                    height: 220,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[800],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.yellow, width: 1.5),
-                    ),
+                  // Preview slike i klikom se bira slika
+                   GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedImagePath = 'lib/assets/images/sample_image.jpeg';
+                      });
+                    },
                     child: const Center(
                       child: Icon(
                         Icons.image,
@@ -101,8 +102,20 @@ class _AddScreenState extends State<AddScreen> {
                   // Add dugme
                   ElevatedButton(
                     onPressed: () {
-                      
-                      Navigator.pop(context);
+                      if (selectedImagePath == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please select an image!'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // opis može da ostane prazan, ali ovde možemo eventualno dohvatiti
+                      String description = descriptionController.text.trim();
+                     // Ovde koristimo description tako da warning nestane
+                      Navigator.pop(context, description); // vraca na home
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.yellow[700],
