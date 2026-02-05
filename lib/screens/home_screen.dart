@@ -1,22 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'myprofile_screen.dart';
 import 'admin_panel.dart';
 import 'add_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  // Placeholder lista slika (kasnije ide backend)
-  final List<String> images = const [];
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
 
-  final bool isLoggedIn = true;  
-  final bool isAdmin = true;
+class _HomeScreenState extends State<HomeScreen> {
+  bool isAdmin = false;
+  bool isLoading = true;
+
+  final User? user = FirebaseAuth.instance.currentUser;
+
+  List<String> images = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (user == null) {
+      isLoading = false;
+    } else {
+      _loadUserRole(user!.uid);
+    }
+  }
+
+  Future<void> _loadUserRole(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      if (doc.exists && doc.data()?['role'] == 'admin') {
+        isAdmin = true;
+      }
+    } catch (e) {
+      debugPrint('Greška pri učitavanju role: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.yellow),
+        ),
+      );
+    }
+
     return Scaffold(
-      
-      floatingActionButton: isLoggedIn
+      floatingActionButton: user != null
           ? FloatingActionButton(
               backgroundColor: Colors.yellow[700],
               foregroundColor: Colors.black,
@@ -29,10 +76,8 @@ class HomeScreen extends StatelessWidget {
               child: const Icon(Icons.add, size: 30),
             )
           : null,
-
       body: Column(
         children: [
-          // HEADER
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 18),
@@ -51,7 +96,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          if (isLoggedIn) 
+          if (user != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -61,7 +106,9 @@ class HomeScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const MyProfileScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const MyProfileScreen(),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -75,20 +122,23 @@ class HomeScreen extends StatelessWidget {
                       child: const Text('MyProfile'),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  if (isAdmin)
+                  if (isAdmin) ...[
+                    const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const AdminContentScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const AdminContentScreen(),
+                            ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
-                          foregroundColor: Colors.yellow[700],
+                          foregroundColor: Colors.yellow,
                           padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: Colors.yellow[700]!),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -96,28 +146,25 @@ class HomeScreen extends StatelessWidget {
                         child: const Text('Admin Panel'),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
 
-          // BODY
           Expanded(
             child: Stack(
               children: [
-                // Pozadinska slika
                 SizedBox.expand(
                   child: Image.asset(
                     'lib/assets/images/homebackground.png',
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                    return Container(color: Colors.grey[900]);
+                    },
+
                   ),
                 ),
-
-                // Tamno-sivi providni sloj
-                Container(
-                  color: const Color.fromARGB(180, 30, 30, 30),
-                ),
-
-                // Sadržaj
+                Container(color: const Color.fromARGB(180, 30, 30, 30)),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: images.isEmpty
@@ -146,9 +193,8 @@ class HomeScreen extends StatelessWidget {
                             crossAxisCount: 2,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
-                            childAspectRatio: 1,
                           ),
-                          itemBuilder: (context, index) {
+                          itemBuilder: (_, index) {
                             return Container(
                               decoration: BoxDecoration(
                                 color: const Color.fromARGB(255, 45, 45, 45),

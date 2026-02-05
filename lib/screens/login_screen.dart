@@ -1,43 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart';
-import 'home_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final FirebaseAuth auth = FirebaseAuth.instance;
+
+  bool isLoading = false;
+
+  @override
   Widget build(BuildContext context) {
-
-    //kontroleri za proveru polja
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-
     return Scaffold(
       body: Stack(
         children: [
-          // Pozadinska slika
           SizedBox.expand(
             child: Image.asset(
               'lib/assets/images/loginbackground.jpeg',
               fit: BoxFit.cover,
             ),
           ),
-
-          // Žuto-tamno sivi overlay / blur sloj
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color.fromRGBO(0, 0, 0, 0.5),   // tamno-sivi
-                  Color.fromRGBO(255, 223, 100, 0.25), // svetlo žuti akcenat
+                  Color.fromRGBO(0, 0, 0, 0.5),
+                  Color.fromRGBO(255, 223, 100, 0.25),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
           ),
-
-          // Centrirani box za login formu
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -46,18 +47,10 @@ class LoginScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.grey[800]?.withAlpha(220),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(100),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Naslov
                     const Text(
                       'LOGIN',
                       style: TextStyle(
@@ -70,112 +63,33 @@ class LoginScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // Email polje
-                    TextField(
-                      controller: emailController,
-                      style: const TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        labelStyle: TextStyle(color: Colors.grey[700]),
-                        filled: true,
-                        fillColor: Colors.grey[300],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                    ),
+                    _field(emailController, 'Email'),
                     const SizedBox(height: 16),
-
-                    // Password polje
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      style: const TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        labelStyle: TextStyle(color: Colors.grey[700]),
-                        filled: true,
-                        fillColor: Colors.grey[300],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      ),
-                    ),
+                    _field(passwordController, 'Password', obscure: true),
                     const SizedBox(height: 24),
 
-                    // Login dugme
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          String email = emailController.text.trim();
-                          String password = passwordController.text;
-
-                          // validacija praznih polja
-                          if (email.isEmpty || password.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please fill in all fields'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          // validacija email formata
-                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Invalid email address'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          // uspešan login
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Login successful!'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-
-                          //ne moze korisnik da se vrati na login kad se uloguje
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HomeScreen(),
-                            ),
-                          );
-                        },
+                        onPressed: isLoading ? null : _loginUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.yellow[700],
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
                         ),
-                        child: const Text('Login'),
+                        child: isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.black,
+                              )
+                            : const Text('Login'),
                       ),
                     ),
+
                     const SizedBox(height: 16),
 
-                    // Register link
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder: (_) => const RegisterScreen(),
@@ -196,6 +110,53 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _loginUser() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => isLoading = true);
+
+    try {
+      await auth.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      // ❗ NE RADIMO NAVIGATOR
+      // AuthWrapper AUTOMATSKI vodi na Home
+
+    } on FirebaseAuthException catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? 'Login failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    bool obscure = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: const TextStyle(color: Colors.black),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.black54),
+        filled: true,
+        fillColor: Colors.grey[300],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }

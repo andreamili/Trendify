@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/welcome_screen.dart';
-import 'firebase_options.dart'; // ovo generisano od FlutterFire CLI
+import 'firebase_options.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // debug log umesto print
-  debugPrint("✅ Firebase initialized successfully!");
 
   runApp(const TrendifyApp());
 }
@@ -25,9 +22,9 @@ class TrendifyApp extends StatelessWidget {
       title: 'Trendify',
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: Colors.yellow[700],
+        primaryColor: Colors.yellow,
       ),
-      home: const WelcomeScreen(),
+      home: const HomeScreen(),
     );
   }
 }

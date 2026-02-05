@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'home_screen.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -72,11 +70,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: isLoading ? null : _registerUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
-                          foregroundColor: Colors.yellow[700],
+                          foregroundColor: Colors.yellow,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(color: Colors.yellow)
+                            ? const CircularProgressIndicator(
+                                color: Colors.yellow,
+                              )
                             : const Text('Register'),
                       ),
                     ),
@@ -85,9 +85,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
                         );
                       },
                       child: const Text(
@@ -105,7 +107,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  
   Future<void> _registerUser() async {
     final messenger = ScaffoldMessenger.of(context);
 
@@ -131,30 +132,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => isLoading = true);
 
     try {
-      
-      final userCredential =
-          await auth.createUserWithEmailAndPassword(
+      final userCredential = await auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-     
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      final uid = userCredential.user!.uid;
 
-      
-      await firestore
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
+      // Firestore upis (ne blokira navigaciju)
+      firestore.collection('users').doc(uid).set({
         'name': name,
         'email': email,
         'role': 'user',
         'createdAt': Timestamp.now(),
       });
+
+      // ❗ NEMA Navigator
+      // AuthWrapper AUTOMATSKI vodi na Home
 
     } on FirebaseAuthException catch (e) {
       messenger.showSnackBar(
