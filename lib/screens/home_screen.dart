@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'myprofile_screen.dart';
 import 'admin_panel.dart';
 import 'add_screen.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,16 +36,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUserRole(String uid) async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
       if (doc.exists && doc.data()?['role'] == 'admin') {
         isAdmin = true;
       }
-    } catch (e) {
-      debugPrint('Greška pri učitavanju role: $e');
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -96,19 +94,61 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          if (user != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                if (user == null) ...[
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const MyProfileScreen(),
-                          ),
+                              builder: (_) => const LoginScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.yellow[700],
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Login'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.yellow,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(color: Colors.yellow[700]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Register'),
+                    ),
+                  ),
+                ] else if (!isAdmin) ...[
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const MyProfileScreen()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -122,34 +162,53 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: const Text('MyProfile'),
                     ),
                   ),
-                  if (isAdmin) ...[
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AdminContentScreen(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.yellow,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: BorderSide(color: Colors.yellow[700]!),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                ] else ...[
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const MyProfileScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.yellow[700],
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text('Admin Panel'),
                       ),
+                      child: const Text('MyProfile'),
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AdminContentScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.yellow,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(color: Colors.yellow[700]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Admin Panel'),
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
+          ),
 
           Expanded(
             child: Stack(
@@ -158,10 +217,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Image.asset(
                     'lib/assets/images/homebackground.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                    return Container(color: Colors.grey[900]);
-                    },
-
+                    errorBuilder: (context, error, stackTrace) =>
+                        Container(color: Colors.grey[900]),
                   ),
                 ),
                 Container(color: const Color.fromARGB(180, 30, 30, 30)),
