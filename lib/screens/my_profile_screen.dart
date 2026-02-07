@@ -38,7 +38,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           final data = doc.data()!;
           setState(() {
             role = data['role'] ?? 'user';
-            fullName = data['name'] ?? 'No Name';
+            fullName = data['fullName'] ?? 'No Name';
             isLoading = false;
           });
         } else {
@@ -181,7 +181,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(color: Colors.yellow.withValues(alpha: 0.3)),
                   ),
@@ -200,12 +200,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.yellow,
+                          border: Border.all(color: Colors.yellow),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           role.toUpperCase(),
-                          style: const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.yellow, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                         ),
                       ),
                     ],

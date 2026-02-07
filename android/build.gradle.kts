@@ -1,5 +1,3 @@
-// android/build.gradle.kts
-
 buildscript {
     repositories {
         google()

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +22,78 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool isLoading = false;
 
   @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    final confirmPassword = confirmController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Fill all fields'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      
+      UserCredential cred = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      
+      if (cred.user != null) {
+        await firestore.collection('users').doc(cred.user!.uid).set({
+          'uid': cred.user!.uid,
+          'fullName': name,
+          'email': email,
+          'role': 'user',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        if (!mounted) return;
+
+        
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Registration failed'), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -34,7 +107,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
           Container(color: Colors.black.withValues(alpha: 0.6)),
-
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -56,7 +128,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-
                     _field(nameController, 'Full Name'),
                     const SizedBox(height: 16),
                     _field(emailController, 'Email'),
@@ -65,7 +136,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     _field(confirmController, 'Confirm Password', obscure: true),
                     const SizedBox(height: 24),
-
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -84,13 +154,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             : const Text('Register'),
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
                     TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+                      onPressed: () => Navigator.pop(context),
                       child: const Text(
                         'Already have an account? Login',
                         style: TextStyle(color: Colors.yellow),
@@ -104,52 +170,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _register() async {
-    final messenger = ScaffoldMessenger.of(context);
-
-    if (nameController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        passwordController.text.isEmpty ||
-        confirmController.text.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('Fill all fields')));
-      return;
-    }
-
-    if (passwordController.text != confirmController.text) {
-      messenger.showSnackBar(const SnackBar(content: Text('Passwords do not match')));
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      final cred = await auth.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      // ČEKAMO da se podaci upišu u Firestore
-      await firestore.collection('users').doc(cred.user!.uid).set({
-        'uid': cred.user!.uid,
-        'name': nameController.text.trim(),
-        'email': emailController.text.trim(),
-        'role': 'user', 
-        'createdAt': Timestamp.now(),
-      });
-
-      if (mounted) {
-        // Idemo dva koraka nazad da bismo bili sigurni da smo na Home
-        // (Jer je putanja bila Home -> Login -> Register)
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-
-    } on FirebaseAuthException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message ?? 'Registration failed')));
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
   }
 
   Widget _field(TextEditingController c, String label, {bool obscure = false}) {

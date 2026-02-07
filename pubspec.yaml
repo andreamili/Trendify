@@ -1,6 +1,6 @@
 name: trendify
 description: "A new Flutter project."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -10,21 +10,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  intl: ^0.18.1
-    
-
-  # iOS style icons
+  intl: ^0.20.2
   cupertino_icons: ^1.0.8
 
   # Firebase packages
-  firebase_core: ^2.24.0
-  cloud_firestore: 4.17.5
-  firebase_auth: ^4.6.3
-  firebase_storage: ^11.5.1
-  google_fonts: ^6.0.0 
+  firebase_core: ^4.4.0
+  cloud_firestore: ^6.1.2
+  firebase_auth: ^6.1.4
+  firebase_storage: ^13.0.6
+  
+  google_fonts: ^8.0.1
   http: ^1.6.0
-
-   
 
 dev_dependencies:
   flutter_test:
@@ -33,6 +29,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
     - lib/assets/images/trendify.png
     - lib/assets/images/homebackground.png
@@ -41,19 +38,3 @@ flutter:
     - lib/assets/images/myprofile.jpeg
     - lib/assets/images/admin.jpeg
     - lib/assets/images/add.jpeg
-
-
-
-
-  # Assets (slike) – primer
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
-
-  # Fonts – primer
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,9 +17,69 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
 
   @override
+  void dispose() {
+   
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      
+      await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? 'Login failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Stack(
         children: [
@@ -95,36 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _login() async {
-    final messenger = ScaffoldMessenger.of(context);
-
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Please fill all fields')));
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      await auth.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      if (mounted) {
-        // SAMO OVO: Pošto je HomeScreen već "ispod", a AuthWrapper u main.dart
-        // već detektuje promenu, samo sklanjamo Login ekran.
-        Navigator.of(context).pop();
-      }
-    } on FirebaseAuthException catch (e) {
-      messenger
-          .showSnackBar(SnackBar(content: Text(e.message ?? 'Login failed')));
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
   }
 
   Widget _field(TextEditingController c, String label, {bool obscure = false}) {
