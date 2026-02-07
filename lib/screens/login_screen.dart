@@ -10,15 +10,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final FirebaseAuth auth = FirebaseAuth.instance;
-
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final auth = FirebaseAuth.instance;
   bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Stack(
         children: [
           SizedBox.expand(
@@ -27,25 +28,14 @@ class _LoginScreenState extends State<LoginScreen> {
               fit: BoxFit.cover,
             ),
           ),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color.fromRGBO(0, 0, 0, 0.5),
-                  Color.fromRGBO(255, 223, 100, 0.25),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
+          Container(color: Colors.black.withValues(alpha: 0.6)),
           Center(
             child: SingleChildScrollView(
               child: Container(
                 padding: const EdgeInsets.all(24),
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 decoration: BoxDecoration(
-                  color: Colors.grey[800]?.withAlpha(220),
+                  color: Colors.grey[850],
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -57,51 +47,44 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.yellow,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                        fontStyle: FontStyle.italic,
                       ),
                     ),
                     const SizedBox(height: 32),
-
                     _field(emailController, 'Email'),
                     const SizedBox(height: 16),
                     _field(passwordController, 'Password', obscure: true),
                     const SizedBox(height: 24),
-
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: isLoading ? null : _loginUser,
+                        onPressed: isLoading ? null : _login,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.yellow[700],
+                          backgroundColor: Colors.yellow,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.black,
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    color: Colors.black, strokeWidth: 2),
                               )
                             : const Text('Login'),
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const RegisterScreen(),
-                          ),
+                              builder: (_) => const RegisterScreen()),
                         );
                       },
                       child: const Text(
                         'Don\'t have an account? Register',
-                        style: TextStyle(
-                          color: Colors.yellow,
-                          decoration: TextDecoration.underline,
-                        ),
+                        style: TextStyle(color: Colors.yellow),
                       ),
                     ),
                   ],
@@ -114,8 +97,15 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _loginUser() async {
+  Future<void> _login() async {
     final messenger = ScaffoldMessenger.of(context);
+
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Please fill all fields')));
+      return;
+    }
+
     setState(() => isLoading = true);
 
     try {
@@ -124,38 +114,38 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text,
       );
 
-      // ❗ NE RADIMO NAVIGATOR
-      // AuthWrapper AUTOMATSKI vodi na Home
-
+      if (mounted) {
+        // SAMO OVO: Pošto je HomeScreen već "ispod", a AuthWrapper u main.dart
+        // već detektuje promenu, samo sklanjamo Login ekran.
+        Navigator.of(context).pop();
+      }
     } on FirebaseAuthException catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(e.message ?? 'Login failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      messenger
+          .showSnackBar(SnackBar(content: Text(e.message ?? 'Login failed')));
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
-  Widget _field(
-    TextEditingController controller,
-    String label, {
-    bool obscure = false,
-  }) {
+  Widget _field(TextEditingController c, String label, {bool obscure = false}) {
     return TextField(
-      controller: controller,
+      controller: c,
       obscureText: obscure,
       style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.black54),
+        floatingLabelStyle:
+            const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         filled: true,
         fillColor: Colors.grey[300],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.yellow, width: 2),
         ),
       ),
     );

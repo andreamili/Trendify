@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,19 +10,21 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final FirebaseAuth auth = FirebaseAuth.instance;
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final auth = FirebaseAuth.instance;
+  final firestore = FirebaseFirestore.instance;
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmController = TextEditingController();
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
 
   bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Stack(
         children: [
           SizedBox.expand(
@@ -32,14 +33,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               fit: BoxFit.cover,
             ),
           ),
-          Container(color: const Color.fromRGBO(0, 0, 0, 0.35)),
+          Container(color: Colors.black.withValues(alpha: 0.6)),
+
           Center(
             child: SingleChildScrollView(
               child: Container(
                 padding: const EdgeInsets.all(24),
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 decoration: BoxDecoration(
-                  color: Colors.yellow[700]?.withAlpha(200),
+                  color: Colors.grey[850],
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -48,7 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const Text(
                       'REGISTER',
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.yellow,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                       ),
@@ -67,15 +69,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: isLoading ? null : _registerUser,
+                        onPressed: isLoading ? null : _register,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.yellow,
+                          backgroundColor: Colors.yellow,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.yellow,
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                               )
                             : const Text('Register'),
                       ),
@@ -85,16 +89,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                        );
+                        Navigator.pop(context);
                       },
                       child: const Text(
                         'Already have an account? Login',
-                        style: TextStyle(color: Colors.black),
+                        style: TextStyle(color: Colors.yellow),
                       ),
                     ),
                   ],
@@ -107,75 +106,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Future<void> _registerUser() async {
+  Future<void> _register() async {
     final messenger = ScaffoldMessenger.of(context);
 
-    final name = nameController.text.trim();
-    final email = emailController.text.trim();
-    final password = passwordController.text;
-    final confirm = confirmController.text;
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirm.isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
+    if (nameController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        confirmController.text.isEmpty) {
+      messenger.showSnackBar(const SnackBar(content: Text('Fill all fields')));
       return;
     }
 
-    if (password != confirm) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
+    if (passwordController.text != confirmController.text) {
+      messenger.showSnackBar(const SnackBar(content: Text('Passwords do not match')));
       return;
     }
 
     setState(() => isLoading = true);
 
     try {
-      final userCredential = await auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
+      final cred = await auth.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
       );
 
-      final uid = userCredential.user!.uid;
-
-      // Firestore upis (ne blokira navigaciju)
-      firestore.collection('users').doc(uid).set({
-        'name': name,
-        'email': email,
-        'role': 'user',
+      // ČEKAMO da se podaci upišu u Firestore
+      await firestore.collection('users').doc(cred.user!.uid).set({
+        'uid': cred.user!.uid,
+        'name': nameController.text.trim(),
+        'email': emailController.text.trim(),
+        'role': 'user', 
         'createdAt': Timestamp.now(),
       });
 
-      // ❗ NEMA Navigator
-      // AuthWrapper AUTOMATSKI vodi na Home
+      if (mounted) {
+        // Idemo dva koraka nazad da bismo bili sigurni da smo na Home
+        // (Jer je putanja bila Home -> Login -> Register)
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
 
     } on FirebaseAuthException catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Registration failed')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(e.message ?? 'Registration failed')));
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
-  Widget _field(
-    TextEditingController controller,
-    String label, {
-    bool obscure = false,
-  }) {
+  Widget _field(TextEditingController c, String label, {bool obscure = false}) {
     return TextField(
-      controller: controller,
+      controller: c,
       obscureText: obscure,
       style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.black54),
+        floatingLabelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         filled: true,
         fillColor: Colors.grey[300],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.yellow, width: 2),
         ),
       ),
     );

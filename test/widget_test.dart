@@ -2,7 +2,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:trendify/firebase_options.dart';
-import 'package:trendify/main.dart'; // ovo je OK
+import 'package:trendify/main.dart'; 
 
 void main() {
   // setUpAll će se pokrenuti pre svih testova i inicijalizovati Firebase
