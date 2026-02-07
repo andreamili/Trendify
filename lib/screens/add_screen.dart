@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddScreen extends StatefulWidget {
   const AddScreen({super.key});
@@ -9,13 +11,62 @@ class AddScreen extends StatefulWidget {
 
 class _AddScreenState extends State<AddScreen> {
   final TextEditingController descriptionController = TextEditingController();
-
-String? selectedImagePath;
+  final TextEditingController imageUrlController = TextEditingController();
+  bool isLoading = false;
 
   @override
   void dispose() {
     descriptionController.dispose();
+    imageUrlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _uploadImage() async {
+    final caption = descriptionController.text.trim();
+    final imageUrl = imageUrlController.text.trim();
+
+    if (caption.isEmpty || imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all fields!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      final userRole = userDoc.data()?['role'] ?? 'user';
+
+      await FirebaseFirestore.instance.collection('images').add({
+        'caption': caption,
+        'imageUrl': imageUrl,
+        'userId': user.uid,
+        'role': userRole,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -24,20 +75,15 @@ String? selectedImagePath;
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          
           SizedBox.expand(
             child: Image.asset(
               'lib/assets/images/add.jpeg',
               fit: BoxFit.cover,
             ),
           ),
-
-          
           Container(
             color: const Color.fromRGBO(0, 0, 0, 0.6),
           ),
-
-          
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -45,8 +91,6 @@ String? selectedImagePath;
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
-
-                  
                   const Text(
                     'ADD NEW IMAGE',
                     textAlign: TextAlign.center,
@@ -58,35 +102,31 @@ String? selectedImagePath;
                       letterSpacing: 2,
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Preview slike i klikom se bira slika
-                   GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedImagePath = 'lib/assets/images/sample_image.jpeg';
-                      });
-                    },
-                    child: const Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 80,
-                        color: Colors.yellow,
+                  TextField(
+                    controller: imageUrlController,
+                    style: const TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      hintText: 'Paste image URL here...',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.grey[300],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
+                      contentPadding: const EdgeInsets.all(16),
+                      prefixIcon: const Icon(Icons.link, color: Colors.grey),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // opis slike
                   TextField(
                     controller: descriptionController,
                     maxLines: 3,
                     style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       hintText: 'Enter image description...',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Colors.grey[300],
                       border: OutlineInputBorder(
@@ -96,27 +136,9 @@ String? selectedImagePath;
                       contentPadding: const EdgeInsets.all(16),
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
-                  // Add dugme
                   ElevatedButton(
-                    onPressed: () {
-                      if (selectedImagePath == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please select an image!'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      // opis može da ostane prazan, ali ovde možemo eventualno dohvatiti
-                      String description = descriptionController.text.trim();
-                     // Ovde koristimo description tako da warning nestane
-                      Navigator.pop(context, description); // vraca na home
-                    },
+                    onPressed: isLoading ? null : _uploadImage,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.yellow[700],
                       foregroundColor: Colors.black,
@@ -129,9 +151,17 @@ String? selectedImagePath;
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: const Text('ADD IMAGE'),
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('ADD IMAGE'),
                   ),
-
                   const SizedBox(height: 20),
                 ],
               ),

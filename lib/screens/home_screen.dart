@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'my_profile_screen.dart';
 import 'admin_panel.dart';
 import 'add_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
-
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
@@ -21,8 +19,6 @@ class _HomeScreenState extends State<HomeScreen> {
   User? user;
   bool isAdmin = false;
   bool isLoading = true;
-  
-  // Stream subscription nam omogućava da pratimo korisnika bez greške
   StreamSubscription<User?>? authSubscription;
 
   @override
@@ -33,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    authSubscription?.cancel(); // Čistimo resurse
+    authSubscription?.cancel();
     super.dispose();
   }
 
@@ -48,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
       } else {
-        // Kada se uloguje, ODMAH vučemo rolu iz Firestore-a
         final doc = await FirebaseFirestore.instance
             .collection('users')
             .doc(newUser.uid)
@@ -66,12 +61,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deletePost(String postId) async {
-    await FirebaseFirestore.instance.collection('posts').doc(postId).delete();
+    await FirebaseFirestore.instance.collection('images').doc(postId).delete();
   }
 
   @override
   Widget build(BuildContext context) {
-    // LOADING EKRAN - Ovo sprečava da korisnik vidi "pogrešna" dugmad dok se baza ne učita
     if (isLoading) {
       return const Scaffold(
         backgroundColor: Colors.black,
@@ -94,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
           : null,
       body: Column(
         children: [
-          // HEADER
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(top: 50, bottom: 18),
@@ -112,8 +105,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
-          // BUTTONS - Sada se garantovano osvežavaju
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: user == null
@@ -134,11 +125,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
           ),
-
-          // FEED
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('posts').orderBy('createdAt', descending: true).snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('images')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(color: Colors.yellow));
@@ -164,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Pomoćne funkcije za vidgete (ostaju iste kao pre...)
   Widget _postItem(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Container(
@@ -181,18 +172,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
-                data['imageUrl'], 
-                fit: BoxFit.cover, 
-                width: double.infinity, 
-                height: 200,
+                data['imageUrl'],
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 250,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  height: 200, color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.yellow)
+                  height: 200,
+                  color: Colors.grey[800],
+                  child: const Icon(Icons.broken_image, color: Colors.yellow),
                 ),
               ),
             ),
           ListTile(
-            title: Text(data['title'] ?? 'No Title', style: const TextStyle(color: Colors.yellow, fontWeight: FontWeight.bold)),
-            subtitle: Text(data['description'] ?? '', style: const TextStyle(color: Colors.white70)),
+            title: Text(
+              data['caption'] ?? 'No Caption',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              "Posted by: ${data['role'] ?? 'user'}",
+              style: const TextStyle(color: Colors.yellow, fontSize: 12),
+            ),
             trailing: (isAdmin || (user != null && user!.uid == data['userId']))
                 ? IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
@@ -210,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(12)),
-        child: const Text('No posts yet.\nStay tuned!', textAlign: TextAlign.center, style: TextStyle(color: Colors.yellow, fontSize: 18)),
+        child: const Text('No images yet.\nStay tuned!', textAlign: TextAlign.center, style: TextStyle(color: Colors.yellow, fontSize: 18)),
       ),
     );
   }
@@ -224,6 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
           foregroundColor: isPrimary ? Colors.black : Colors.yellow,
           side: isPrimary ? null : BorderSide(color: Colors.yellow[700]!),
           padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Text(text),
       ),
