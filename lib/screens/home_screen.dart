@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'my_profile_screen.dart';
 import 'admin_panel.dart';
 import 'add_screen.dart';
@@ -19,18 +21,40 @@ class _HomeScreenState extends State<HomeScreen> {
   User? user;
   bool isAdmin = false;
   bool isLoading = true;
+  String dailyQuote = "Loading inspiration...";
   StreamSubscription<User?>? authSubscription;
 
   @override
   void initState() {
     super.initState();
     _initUser();
+    _fetchQuote();
   }
 
   @override
   void dispose() {
     authSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> _fetchQuote() async {
+    try {
+      final response = await http.get(Uri.parse('https://zenquotes.io/api/random'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            dailyQuote = data[0]['q'];
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          dailyQuote = "Style is a way to say who you are without having to speak.";
+        });
+      }
+    }
   }
 
   Future<void> _initUser() async {
@@ -86,19 +110,33 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.only(top: 50, bottom: 18),
+            padding: const EdgeInsets.only(top: 50, bottom: 10),
             color: Colors.black,
-            child: const Center(
-              child: Text(
-                'TRENDIFY',
-                style: TextStyle(
-                  color: Colors.yellow,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                  letterSpacing: 2,
+            child: Column(
+              children: [
+                const Text(
+                  'TRENDIFY',
+                  style: TextStyle(
+                    color: Colors.yellow,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    fontStyle: FontStyle.italic,
+                    letterSpacing: 2,
+                  ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+                  child: Text(
+                    '"$dailyQuote"',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
@@ -131,11 +169,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(color: Colors.yellow));
                 }
-
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return _emptyState();
                 }
-
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: snapshot.data!.docs.length,
@@ -154,7 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _postItem(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 25),
       decoration: BoxDecoration(
@@ -169,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
               child: AspectRatio(
-                aspectRatio: 0.8, // IDENTIČNO KAO U ADD SCREEN
+                aspectRatio: 0.8,
                 child: Image.network(
                   data['imageUrl'],
                   fit: BoxFit.cover,
@@ -195,31 +230,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       data['userName'] ?? 'Trendify User',
-                      style: const TextStyle(
-                        color: Colors.white, 
-                        fontWeight: FontWeight.bold, 
-                        fontSize: 15
-                      ),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Text(
                       data['role']?.toString().toUpperCase() ?? 'USER',
-                      style: TextStyle(
-                        color: Colors.yellow[700], 
-                        fontSize: 10, 
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1
-                      ),
+                      style: TextStyle(color: Colors.yellow[700], fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   data['caption'] ?? '',
-                  style: const TextStyle(
-                    color: Colors.white70, 
-                    fontSize: 14, 
-                    height: 1.4
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
                 ),
               ],
             ),
