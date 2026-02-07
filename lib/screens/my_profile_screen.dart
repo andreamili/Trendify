@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,8 +11,8 @@ class MyProfileScreen extends StatefulWidget {
 
 class _MyProfileScreenState extends State<MyProfileScreen> {
   final User? user = FirebaseAuth.instance.currentUser;
-  String role = 'User';
-  String fullName = '';
+  String role = 'user';
+  String fullName = 'Loading...';
   bool isLoading = true;
 
   @override
@@ -24,27 +23,41 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   Future<void> _loadUserData() async {
     if (user == null) {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
       return;
     }
 
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user!.uid)
-        .get();
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
 
-    if (doc.exists) {
-      final data = doc.data()!;
-      role = data['role'] ?? 'User';
-      fullName = data['name'] ?? 'User';
+      if (mounted) {
+        if (doc.exists && doc.data() != null) {
+          final data = doc.data()!;
+          setState(() {
+            role = data['role'] ?? 'user';
+            fullName = data['name'] ?? 'No Name';
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            fullName = 'User not found';
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoading = false);
     }
-
-    if (mounted) setState(() => isLoading = false);
   }
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    }
   }
 
   Future<void> _editCaption(String docId, String currentCaption) async {
@@ -54,16 +67,29 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Edit caption',
-          style: TextStyle(color: Colors.yellow),
-        ),
-        content: TextField(
-          controller: controller,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'New caption',
-            hintStyle: TextStyle(color: Colors.grey),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text('Edit description', style: TextStyle(color: Colors.yellow)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: controller,
+            maxLines: 5,
+            minLines: 3,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Enter new description...',
+              hintStyle: TextStyle(color: Colors.grey[600]),
+              filled: true,
+              fillColor: Colors.black,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.grey),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.yellow),
+              ),
+            ),
           ),
         ),
         actions: [
@@ -71,7 +97,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
             onPressed: () async {
               await FirebaseFirestore.instance
                   .collection('images')
@@ -79,7 +106,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   .update({'caption': controller.text.trim()});
               if (mounted) Navigator.pop(context);
             },
-            child: const Text('Save', style: TextStyle(color: Colors.yellow)),
+            child: const Text('Save', style: TextStyle(color: Colors.black)),
           ),
         ],
       ),
@@ -87,20 +114,30 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _deleteImage(String docId) async {
-    await FirebaseFirestore.instance
-        .collection('images')
-        .doc(docId)
-        .delete();
+    bool confirm = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text('Delete Post?', style: TextStyle(color: Colors.red)),
+        content: const Text('Are you sure you want to remove this trend?', style: TextStyle(color: Colors.white)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No', style: TextStyle(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yes', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await FirebaseFirestore.instance.collection('images').doc(docId).delete();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || user == null) {
+    if (isLoading) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.yellow),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.yellow)),
       );
     }
 
@@ -113,178 +150,142 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               fit: BoxFit.cover,
             ),
           ),
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-            child: Container(color: const Color.fromRGBO(0, 0, 0, 0.3)),
-          ),
+          Container(color: Colors.black.withValues(alpha: 0.7)),
           SafeArea(
             child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'MY PROFILE',
-                          style: TextStyle(
-                            color: Colors.yellow[700],
-                            fontSize: 26,
-                            fontStyle: FontStyle.italic,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'MY PROFILE',
+                        style: TextStyle(
+                          color: Colors.yellow,
+                          fontSize: 24,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
                         ),
-                        ElevatedButton(
-                          onPressed: _logout,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.yellow[700],
-                            foregroundColor: Colors.black,
-                          ),
-                          child: const Text('Logout'),
-                        ),
-                      ],
-                    ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.yellow),
+                        onPressed: _logout,
+                      ),
+                    ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          fullName,
-                          style: const TextStyle(
-                            color: Colors.yellow,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.yellow.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        fullName,
+                        style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        user?.email ?? '',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.yellow,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user!.email ?? '',
-                          style: const TextStyle(color: Colors.grey),
+                        child: Text(
+                          role.toUpperCase(),
+                          style: const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          role,
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+                const Text(
+                  "MY UPLOADS",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w300, letterSpacing: 2),
+                ),
+                const SizedBox(height: 10),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('images')
-                        .where('userId', isEqualTo: user!.uid)
-                        .orderBy('createdAt', descending: true)
+                        .where('userId', isEqualTo: user?.uid)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData ||
-                          snapshot.data!.docs.isEmpty) {
-                        return Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[900],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'You haven\'t uploaded any images yet!',
-                              style: TextStyle(
-                                color: Colors.yellow,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                      if (!snapshot.hasData) return const SizedBox();
+                      final docs = snapshot.data!.docs;
+
+                      if (docs.isEmpty) {
+                        return const Center(
+                          child: Text('No trends yet.', style: TextStyle(color: Colors.grey)),
                         );
                       }
 
-                      final docs = snapshot.data!.docs;
-
                       return GridView.builder(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(16),
                         itemCount: docs.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 15,
+                          mainAxisSpacing: 15,
+                          childAspectRatio: 0.8,
                         ),
                         itemBuilder: (_, index) {
-                          final data =
-                              docs[index].data() as Map<String, dynamic>;
+                          final data = docs[index].data() as Map<String, dynamic>;
+                          final docId = docs[index].id;
 
                           return Container(
                             decoration: BoxDecoration(
                               color: Colors.grey[900],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.yellow,
-                                width: 2,
-                              ),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Colors.grey[800]!),
                             ),
                             child: Column(
                               children: [
                                 Expanded(
                                   child: ClipRRect(
-                                    borderRadius:
-                                        BorderRadius.circular(10),
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                                     child: Image.network(
                                       data['imageUrl'],
+                                      width: double.infinity,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                                   child: Text(
                                     data['caption'] ?? '',
-                                    style: const TextStyle(
-                                        color: Colors.white),
-                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          color: Colors.yellow),
-                                      onPressed: () => _editCaption(
-                                        docs[index].id,
-                                        data['caption'] ?? '',
-                                      ),
+                                      icon: const Icon(Icons.edit_note, color: Colors.yellow, size: 20),
+                                      onPressed: () => _editCaption(docId, data['caption'] ?? ''),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.red),
-                                      onPressed: () =>
-                                          _deleteImage(docs[index].id),
+                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                      onPressed: () => _deleteImage(docId),
                                     ),
                                   ],
-                                ),
+                                )
                               ],
                             ),
                           );

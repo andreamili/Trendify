@@ -52,16 +52,12 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) {
           setState(() {
             user = newUser;
-            isAdmin = doc.exists && doc.data()?['role'] == 'admin';
+            isAdmin = doc.exists && (doc.data()?['role'] == 'admin');
             isLoading = false;
           });
         }
       }
     });
-  }
-
-  Future<void> _deletePost(String postId) async {
-    await FirebaseFirestore.instance.collection('images').doc(postId).delete();
   }
 
   @override
@@ -158,46 +154,75 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _postItem(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 25),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        color: const Color(0xFF121212),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (data['imageUrl'] != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: Image.network(
-                data['imageUrl'],
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 250,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: 200,
-                  color: Colors.grey[800],
-                  child: const Icon(Icons.broken_image, color: Colors.yellow),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+              child: AspectRatio(
+                aspectRatio: 0.8, // IDENTIČNO KAO U ADD SCREEN
+                child: Image.network(
+                  data['imageUrl'],
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey[850],
+                    child: const Icon(Icons.broken_image, color: Colors.yellow),
+                  ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator(color: Colors.yellow));
+                  },
                 ),
               ),
             ),
-          ListTile(
-            title: Text(
-              data['caption'] ?? 'No Caption',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      data['userName'] ?? 'Trendify User',
+                      style: const TextStyle(
+                        color: Colors.white, 
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 15
+                      ),
+                    ),
+                    Text(
+                      data['role']?.toString().toUpperCase() ?? 'USER',
+                      style: TextStyle(
+                        color: Colors.yellow[700], 
+                        fontSize: 10, 
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  data['caption'] ?? '',
+                  style: const TextStyle(
+                    color: Colors.white70, 
+                    fontSize: 14, 
+                    height: 1.4
+                  ),
+                ),
+              ],
             ),
-            subtitle: Text(
-              "Posted by: ${data['role'] ?? 'user'}",
-              style: const TextStyle(color: Colors.yellow, fontSize: 12),
-            ),
-            trailing: (isAdmin || (user != null && user!.uid == data['userId']))
-                ? IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _deletePost(doc.id),
-                  )
-                : null,
           ),
         ],
       ),
@@ -206,10 +231,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _emptyState() {
     return Center(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(12)),
-        child: const Text('No images yet.\nStay tuned!', textAlign: TextAlign.center, style: TextStyle(color: Colors.yellow, fontSize: 18)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.image_search, size: 64, color: Colors.grey[800]),
+          const SizedBox(height: 16),
+          const Text(
+            'No trends yet.\nBe the first to post!',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey, fontSize: 16),
+          ),
+        ],
       ),
     );
   }
@@ -223,9 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
           foregroundColor: isPrimary ? Colors.black : Colors.yellow,
           side: isPrimary ? null : BorderSide(color: Colors.yellow[700]!),
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
         ),
-        child: Text(text),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }

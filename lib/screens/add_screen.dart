@@ -13,6 +13,17 @@ class _AddScreenState extends State<AddScreen> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController imageUrlController = TextEditingController();
   bool isLoading = false;
+  String currentPreviewUrl = "";
+
+  @override
+  void initState() {
+    super.initState();
+    imageUrlController.addListener(() {
+      setState(() {
+        currentPreviewUrl = imageUrlController.text.trim();
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -47,11 +58,13 @@ class _AddScreenState extends State<AddScreen> {
           .get();
       
       final userRole = userDoc.data()?['role'] ?? 'user';
+      final userName = userDoc.data()?['name'] ?? 'User';
 
       await FirebaseFirestore.instance.collection('images').add({
         'caption': caption,
         'imageUrl': imageUrl,
         'userId': user.uid,
+        'userName': userName,
         'role': userRole,
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -82,7 +95,7 @@ class _AddScreenState extends State<AddScreen> {
             ),
           ),
           Container(
-            color: const Color.fromRGBO(0, 0, 0, 0.6),
+            color: const Color(0xFF0A0A0A).withValues(alpha: 0.9),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -90,7 +103,7 @@ class _AddScreenState extends State<AddScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   const Text(
                     'ADD NEW IMAGE',
                     textAlign: TextAlign.center,
@@ -102,7 +115,48 @@ class _AddScreenState extends State<AddScreen> {
                       letterSpacing: 2,
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 25),
+                  
+                  // BOX ZA SLIKU - ISTI KAO NA HOME
+                  Center(
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.7,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 0.8, // Ključno za doslednost sa Home ekranom
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: currentPreviewUrl.isEmpty
+                              ? const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.image_search, color: Colors.white24, size: 50),
+                                    SizedBox(height: 8),
+                                    Text('Preview', 
+                                      style: TextStyle(color: Colors.white24, fontSize: 12)),
+                                  ],
+                                )
+                              : Image.network(
+                                  currentPreviewUrl,
+                                  fit: BoxFit.cover, // Automatski popunjava boks
+                                  errorBuilder: (context, error, stackTrace) => const Center(
+                                    child: Icon(Icons.broken_image, color: Colors.redAccent, size: 40),
+                                  ),
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(child: CircularProgressIndicator(color: Colors.yellow));
+                                  },
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 25),
                   TextField(
                     controller: imageUrlController,
                     style: const TextStyle(color: Colors.black),
@@ -116,13 +170,13 @@ class _AddScreenState extends State<AddScreen> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.all(16),
-                      prefixIcon: const Icon(Icons.link, color: Colors.grey),
+                      prefixIcon: const Icon(Icons.link, color: Colors.black54),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
                   TextField(
                     controller: descriptionController,
-                    maxLines: 3,
+                    maxLines: 2,
                     style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       hintText: 'Enter image description...',
@@ -136,7 +190,7 @@ class _AddScreenState extends State<AddScreen> {
                       contentPadding: const EdgeInsets.all(16),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: isLoading ? null : _uploadImage,
                     style: ElevatedButton.styleFrom(
