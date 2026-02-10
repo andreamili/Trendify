@@ -10,16 +10,25 @@ class AdminContentScreen extends StatefulWidget {
 }
 
 class _AdminContentScreenState extends State<AdminContentScreen> {
-  String searchQuery = '';
+  bool isDescending = true;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Formatiranje datuma iz Firebase-a
   String formatDate(dynamic date) {
     if (date == null) return 'N/A';
     DateTime dt = (date is Timestamp) ? date.toDate() : date;
     const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${dt.day} ${monthNames[dt.month - 1]} ${dt.year}';
   }
@@ -29,27 +38,21 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Pozadinska slika
           SizedBox.expand(
             child: Image.asset(
               'lib/assets/images/admin.jpeg',
               fit: BoxFit.cover,
             ),
           ),
-          
-          // TAMNIJI I JAČI OVERLAY
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.8),
-            ),
+            child: Container(color: Colors.black.withValues(alpha: 0.8)),
           ),
-
           SafeArea(
             child: Column(
               children: [
                 _buildHeader(),
-                _buildSearchBar(),
+                _buildSortBar(),
                 Expanded(child: _buildImageStream()),
               ],
             ),
@@ -82,22 +85,53 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSortBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: TextField(
-        onChanged: (value) => setState(() => searchQuery = value),
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: 'Search by User or Caption...',
-          hintStyle: const TextStyle(color: Colors.grey),
-          prefixIcon: const Icon(Icons.search, color: Colors.yellow),
-          filled: true,
-          fillColor: Colors.grey[900],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), 
-            borderSide: BorderSide.none
-          ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Sort by Date:",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            DropdownButton<bool>(
+              value: isDescending,
+              dropdownColor: Colors.grey[900],
+              underline: const SizedBox(),
+              icon: const Icon(Icons.sort, color: Colors.yellow),
+              items: const [
+                DropdownMenuItem(
+                  value: true,
+                  child: Text(
+                    "Newest First",
+                    style: TextStyle(color: Colors.yellow),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: false,
+                  child: Text(
+                    "Oldest First",
+                    style: TextStyle(color: Colors.yellow),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => isDescending = value);
+                }
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -105,18 +139,18 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
 
   Widget _buildImageStream() {
     return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('images').orderBy('createdAt', descending: true).snapshots(),
+      stream: _db
+          .collection('images')
+          .orderBy('createdAt', descending: isDescending)
+          .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.yellow));
-        
-        var docs = snapshot.data!.docs.where((doc) {
-          var data = doc.data() as Map<String, dynamic>;
-          String uid = data['userId'] ?? '';
-          String cap = data['caption'] ?? '';
-          return searchQuery.isEmpty || 
-                 uid.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                 cap.toLowerCase().contains(searchQuery.toLowerCase());
-        }).toList();
+        if (!snapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.yellow),
+          );
+        }
+
+        var docs = snapshot.data!.docs;
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
@@ -153,7 +187,10 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                   height: 100,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stack) => Container(
-                    width: 100, height: 100, color: Colors.grey, child: const Icon(Icons.broken_image),
+                    width: 100,
+                    height: 100,
+                    color: Colors.grey,
+                    child: const Icon(Icons.broken_image),
                   ),
                 ),
               ),
@@ -162,36 +199,45 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // OVO JE DEO KOJI VUČE FULL NAME IZ KOLEKCIJE USERS
                     FutureBuilder<DocumentSnapshot>(
                       future: _db.collection('users').doc(data['userId']).get(),
                       builder: (context, userSnapshot) {
                         String displayName = "Unknown User";
                         if (userSnapshot.hasData && userSnapshot.data!.exists) {
-                          var userData = userSnapshot.data!.data() as Map<String, dynamic>;
+                          var userData =
+                              userSnapshot.data!.data() as Map<String, dynamic>;
                           displayName = userData['fullName'] ?? "No Name";
                         } else if (data['userId'] != null) {
-                          // Ako nema imena u bazi, prikaži skraćeni ID kao backup
-                          displayName = "ID: ${data['userId'].toString().substring(0, 8)}...";
+                          displayName =
+                              "ID: ${data['userId'].toString().substring(0, 8)}...";
                         }
 
                         return Text(
                           displayName,
                           style: const TextStyle(
-                            color: Colors.yellow, 
+                            color: Colors.yellow,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16
+                            fontSize: 16,
                           ),
                         );
                       },
                     ),
                     const SizedBox(height: 4),
-                    Text(formatDate(data['createdAt']), 
-                        style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(
+                      formatDate(data['createdAt']),
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                     const SizedBox(height: 8),
-                    Text(data['caption'] ?? '', 
-                        maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontStyle: FontStyle.italic)),
+                    Text(
+                      data['caption'] ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -210,10 +256,13 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
               TextButton.icon(
                 onPressed: () => _deletePost(docId),
                 icon: const Icon(Icons.delete_forever, color: Colors.red),
-                label: const Text("Delete", style: TextStyle(color: Colors.red)),
+                label: const Text(
+                  "Delete",
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -221,8 +270,11 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
 
   void _deletePost(String docId) async {
     final messenger = ScaffoldMessenger.of(context);
-    bool confirm = await _showConfirmDialog("Delete", "Are you sure you want to remove this post?");
-    
+    bool confirm = await _showConfirmDialog(
+      "Delete",
+      "Are you sure you want to remove this post?",
+    );
+
     if (confirm) {
       await _db.collection('images').doc(docId).delete();
       messenger.showSnackBar(
@@ -232,35 +284,44 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
   }
 
   void _editPost(String docId, String currentCaption) {
-    TextEditingController editController = TextEditingController(text: currentCaption);
-    
+    TextEditingController editController = TextEditingController(
+      text: currentCaption,
+    );
+
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.grey[900],
-          title: const Text("Edit Caption", style: TextStyle(color: Colors.yellow)),
+          title: const Text(
+            "Edit Caption",
+            style: TextStyle(color: Colors.yellow),
+          ),
           content: TextField(
             controller: editController,
             style: const TextStyle(color: Colors.white),
             maxLines: 4,
             decoration: const InputDecoration(
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.yellow)),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.yellow),
+              ),
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext), 
-              child: const Text("Cancel")
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Cancel"),
             ),
             ElevatedButton(
               onPressed: () async {
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
                 final navigator = Navigator.of(dialogContext);
 
-                await _db.collection('images').doc(docId).update({'caption': editController.text});
-                
-                navigator.pop(); 
+                await _db.collection('images').doc(docId).update({
+                  'caption': editController.text,
+                });
+
+                navigator.pop();
                 scaffoldMessenger.showSnackBar(
                   const SnackBar(content: Text('Post updated successfully')),
                 );
@@ -269,22 +330,29 @@ class _AdminContentScreenState extends State<AdminContentScreen> {
             ),
           ],
         );
-      }
+      },
     );
   }
 
   Future<bool> _showConfirmDialog(String title, String content) async {
     return await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text(title, style: const TextStyle(color: Colors.red)),
-        content: Text(content, style: const TextStyle(color: Colors.white)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("No")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Yes")),
-        ],
-      ),
-    ) ?? false;
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            title: Text(title, style: const TextStyle(color: Colors.red)),
+            content: Text(content, style: const TextStyle(color: Colors.white)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("No"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("Yes"),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }
