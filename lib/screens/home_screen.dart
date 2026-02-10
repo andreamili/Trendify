@@ -37,9 +37,31 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  String _formatDate(dynamic date) {
+    if (date == null) return 'N/A';
+    DateTime dt = (date is Timestamp) ? date.toDate() : date;
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${dt.day} ${monthNames[dt.month - 1]} ${dt.year}';
+  }
+
   Future<void> _fetchQuote() async {
     try {
-      final response = await http.get(Uri.parse('https://zenquotes.io/api/random'));
+      final response = await http.get(
+        Uri.parse('https://zenquotes.io/api/random'),
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
@@ -51,14 +73,17 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          dailyQuote = "Style is a way to say who you are without having to speak.";
+          dailyQuote =
+              "Style is a way to say who you are without having to speak.";
         });
       }
     }
   }
 
   Future<void> _initUser() async {
-    authSubscription = FirebaseAuth.instance.authStateChanges().listen((User? newUser) async {
+    authSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      User? newUser,
+    ) async {
       if (newUser == null) {
         if (mounted) {
           setState(() {
@@ -125,7 +150,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 8,
+                  ),
                   child: Text(
                     '"$dailyQuote"',
                     textAlign: TextAlign.center,
@@ -144,17 +172,53 @@ class _HomeScreenState extends State<HomeScreen> {
             child: user == null
                 ? Row(
                     children: [
-                      _topButton('Login', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())), true),
+                      _topButton(
+                        'Login',
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        ),
+                        true,
+                      ),
                       const SizedBox(width: 12),
-                      _topButton('Register', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())), false),
+                      _topButton(
+                        'Register',
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        ),
+                        false,
+                      ),
                     ],
                   )
                 : Row(
                     children: [
-                      _topButton('My Profile', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen())), true),
+                      _topButton(
+                        'My Profile',
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MyProfileScreen(),
+                          ),
+                        ),
+                        true,
+                      ),
                       if (isAdmin) ...[
                         const SizedBox(width: 12),
-                        _topButton('Admin Panel', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminContentScreen())), false),
+                        _topButton(
+                          'Admin Panel',
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminContentScreen(),
+                            ),
+                          ),
+                          false,
+                        ),
                       ],
                     ],
                   ),
@@ -167,7 +231,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.yellow));
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.yellow),
+                  );
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return _emptyState();
@@ -202,7 +268,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           if (data['imageUrl'] != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(19),
+              ),
               child: AspectRatio(
                 aspectRatio: 0.8,
                 child: Image.network(
@@ -215,7 +283,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator(color: Colors.yellow));
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.yellow),
+                    );
                   },
                 ),
               ),
@@ -228,20 +298,48 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      data['userName'] ?? 'Trendify User',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    FutureBuilder<DocumentSnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(data['userId'])
+                          .get(),
+                      builder: (context, userSnapshot) {
+                        String displayName =
+                            data['userName'] ?? 'Trendify User';
+                        if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                          var userData =
+                              userSnapshot.data!.data() as Map<String, dynamic>;
+                          displayName = userData['fullName'] ?? displayName;
+                        }
+                        return Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        );
+                      },
                     ),
                     Text(
-                      data['role']?.toString().toUpperCase() ?? 'USER',
-                      style: TextStyle(color: Colors.yellow[700], fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                      _formatDate(data['createdAt']),
+                      style: TextStyle(
+                        color: Colors.yellow[700],
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   data['caption'] ?? '',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -277,7 +375,9 @@ class _HomeScreenState extends State<HomeScreen> {
           foregroundColor: isPrimary ? Colors.black : Colors.yellow,
           side: isPrimary ? null : BorderSide(color: Colors.yellow[700]!),
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           elevation: 0,
         ),
         child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
